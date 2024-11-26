@@ -1,12 +1,11 @@
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-import numpy as np
-import pandas as pd
-
 def LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate):
+    import numpy as np
+    import pandas as pd
+    from datetime import datetime
+
     # Initialize the Linear Regression model
     forecast_res = {}
-    selected_data ={}
+    selected_data = {}
     dates = [historyFromDate, historyToDate, selectedFromDate, selectedToDate]
     parsed_dates = []
     for date in dates:
@@ -20,7 +19,7 @@ def LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, sel
     historyFromDateIndex = data[0].index(parsed_dates[0])
     historyToDateIndex = data[0].index(parsed_dates[1])
     data = pd.DataFrame(data[1:], columns=data[0])
-    data = data.iloc[:, historyFromDateIndex:historyToDateIndex+1]
+    data = data.iloc[:, historyFromDateIndex:historyToDateIndex + 1]
     months = np.array(range(1, len(data.columns) + 1)).reshape(-1, 1)
 
     date_format = "%b-%y"
@@ -36,18 +35,19 @@ def LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, sel
     end = pd.to_datetime(parsed_dates[3], format='%b-%y')
     date_range = pd.date_range(start=start, end=end, freq='MS')
     col_months = date_range.strftime('%b-%y').tolist()
-    forecast_res["months"]=col_months
+    forecast_res["months"] = col_months
     selected_data["months"] = get_months_between_dates(parsed_dates[0], parsed_dates[1])
+
     for index, row in data.iterrows():
-        y = row.values
-        print(y)
-        print(months)
+        y = row.values.astype(float)  # Convert 'y' values to float
         model = LinearRegressionScratch()
         model.fit(months, y, epochs=1000, learning_rate=0.01)
         forecast = model.predict(future_months)
         forecast_res[index] = list(forecast)
         selected_data[index] = list(map(float, y))
+
     return forecast_res, selected_data
+
 
 
 class LinearRegressionScratch:
@@ -106,6 +106,8 @@ def standardize_date(date_string):
 
 
 def get_months_between_dates(start_date_str, end_date_str):
+    from datetime import datetime
+    from dateutil.relativedelta import relativedelta
     # Define the format of the input dates
     date_format = "%b-%y"
     

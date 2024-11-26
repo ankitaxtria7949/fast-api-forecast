@@ -33,6 +33,7 @@ async def forecast_sales(file:UploadFile=File(...), selectedSheet: Optional[str]
     csv_reader = csv.reader(StringIO(decoded), delimiter=',')
     data = [row for row in csv_reader]
     if selectedSheet == 'Linear Regression':
+        print(data)
         forecast_val, dt = LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
     return {"forecast": forecast_val, "dt": dt,"filename": file.filename, "historyFromDate" : historyFromDate,"historyToDate" : historyToDate,"selectedFromDate" : selectedFromDate,"selectedToDate" : selectedToDate}
 
