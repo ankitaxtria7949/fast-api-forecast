@@ -4,7 +4,4 @@ python-multipart
 python-dateutil
 numpy
 pandas
-scikit-learn
-
-
 
