@@ -4,7 +4,7 @@ from fastapi import File, UploadFile, Form
 from typing import Optional
 import csv
 from io import StringIO
-
+from LinearRegression import LinearRegression
 
 app=FastAPI()
 # Allow React app on localhost:3000 to communicate with the FastAPI backend
@@ -32,7 +32,8 @@ async def forecast_sales(file:UploadFile=File(...), selectedSheet: Optional[str]
     decoded = contents.decode('utf-8')
     csv_reader = csv.reader(StringIO(decoded), delimiter=',')
     data = [row for row in csv_reader]
-    
-    return {"message": "Hello World"}
+    if selectedSheet == 'Linear Regression':
+        forecast_val, dt = LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
+    return {"forecast": forecast_val, "dt": dt,"filename": file.filename, "historyFromDate" : historyFromDate,"historyToDate" : historyToDate,"selectedFromDate" : selectedFromDate,"selectedToDate" : selectedToDate}
 
 
