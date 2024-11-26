@@ -20,3 +20,7 @@ app.add_middleware(
 def read_root():
     return {"message": "Hello World"}
 
+@app.post("/demo")
+def demo():
+    return {"message":"Hellow"}
+
