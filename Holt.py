@@ -1,8 +1,8 @@
-def Average(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate):
+def Holt(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate):
     import numpy as np
     import pandas as pd
     from datetime import datetime
-    print(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
+    from statsmodels.tsa.holtwinters import ExponentialSmoothing
     # Initialize the Linear Regression model
     forecast_res = {}
     selected_data = {}
@@ -37,14 +37,21 @@ def Average(data, historyFromDate, historyToDate, selectedFromDate, selectedToDa
     col_months = date_range.strftime('%b-%y').tolist()
     forecast_res["months"] = col_months
     selected_data["months"] = get_months_between_dates(parsed_dates[0], parsed_dates[1])
+    forecast = []
     for index, row in data.iterrows():
-        forecast = []
         y = row.values.astype(float)  # Convert 'y' values to float
-        for i in future_months:
-            forecast.append(np.mean(y))
-        forecast_res[index] = list(forecast)
         selected_data[index] = list(map(float, y))
-
+        model = ExponentialSmoothing(
+        pd.Series(y), trend="additive", seasonal=None, initialization_method="estimated"
+        )
+        fit = model.fit()
+        forecast_steps = len(get_months_between_dates(parsed_dates[1], parsed_dates[3]))-1
+        forecast = fit.forecast(steps=forecast_steps)
+        forecast = list(forecast)
+        to_remove = len(get_months_between_dates(parsed_dates[1], parsed_dates[2]))-2
+        forecast = forecast[to_remove:]
+        forecast_res[index] = list(forecast)
+        
     return forecast_res, selected_data
 
 

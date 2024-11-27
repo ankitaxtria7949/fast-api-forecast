@@ -7,6 +7,7 @@ from io import StringIO
 from LinearRegression import LinearRegression
 from LogLinear import LogLinear
 from Average import Average
+from Holt import Holt
 
 app=FastAPI()
 # Allow React app on localhost:3000 to communicate with the FastAPI backend
@@ -38,6 +39,8 @@ async def forecast_sales(file:UploadFile=File(...), selectedSheet: Optional[str]
         forecast_val, dt = LogLinear(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)   
     elif selectedSheet == 'Average':
         forecast_val, dt = Average(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
+    elif selectedSheet == 'Holt':
+        forecast_val, dt = Holt(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
     return {"forecast": forecast_val, "dt": dt,"filename": file.filename, "historyFromDate" : historyFromDate,"historyToDate" : historyToDate,"selectedFromDate" : selectedFromDate,"selectedToDate" : selectedToDate}
 
 
