@@ -4,4 +4,3 @@ python-multipart
 python-dateutil
 numpy
 pandas
-statsmodels
