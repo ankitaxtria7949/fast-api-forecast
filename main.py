@@ -6,6 +6,7 @@ import csv
 from io import StringIO
 from LinearRegression import LinearRegression
 from LogLinear import LogLinear
+from Average import Average
 
 app=FastAPI()
 # Allow React app on localhost:3000 to communicate with the FastAPI backend
@@ -18,7 +19,7 @@ app.add_middleware(
 )
 
 
- 
+
  
 @app.get("/")
 def read_root():
@@ -32,10 +33,11 @@ async def forecast_sales(file:UploadFile=File(...), selectedSheet: Optional[str]
     csv_reader = csv.reader(StringIO(decoded), delimiter=',')
     data = [row for row in csv_reader]
     if selectedSheet == 'Linear Regression':
-        print(data)
         forecast_val, dt = LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
     elif selectedSheet == 'Log Linear Regression':
         forecast_val, dt = LogLinear(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)   
+    elif selectedSheet == 'Average':
+        forecast_val, dt = Average(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
     return {"forecast": forecast_val, "dt": dt,"filename": file.filename, "historyFromDate" : historyFromDate,"historyToDate" : historyToDate,"selectedFromDate" : selectedFromDate,"selectedToDate" : selectedToDate}
 
 
