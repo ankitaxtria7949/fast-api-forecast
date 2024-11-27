@@ -4,3 +4,5 @@ python-multipart
 python-dateutil
 numpy
 pandas
+statsmodels
+scikit-learn
