@@ -1,4 +1,4 @@
-def LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate):
+def LogLinear(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate):
     import numpy as np
     import pandas as pd
     from datetime import datetime
@@ -40,12 +40,13 @@ def LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, sel
     forecast = []
     for index, row in data.iterrows():
         y = row.values.astype(float)  # Convert 'y' values to float
+        selected_data[index] = list(map(float, y))
+        y = np.log(y)
         X = np.hstack((np.ones((months.shape[0], 1)), months))
         coefficients = np.linalg.inv(X.T @ X) @ X.T @ y
         for i in future_months:
-            forecast.append(coefficients[0] + coefficients[1] * i[0])
+            forecast.append(np.exp(coefficients[0] + coefficients[1] * i[0]))
         forecast_res[index] = list(forecast)
-        selected_data[index] = list(map(float, y))
 
     return forecast_res, selected_data
 
