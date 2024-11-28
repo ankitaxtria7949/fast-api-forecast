@@ -21,7 +21,7 @@ app.add_middleware(
 
 
 
- 
+
 @app.get("/")
 def read_root():
     return {"message": "Hello World"}
@@ -33,14 +33,19 @@ async def forecast_sales(file:UploadFile=File(...), selectedSheet: Optional[str]
     decoded = contents.decode('utf-8')
     csv_reader = csv.reader(StringIO(decoded), delimiter=',')
     data = [row for row in csv_reader]
+    if len(data[0]) == 2 and len(data) > 2:
+        dates = [entry[0] for entry in data]
+        values = [entry[1] for entry in data]
+        data = [dates, values]
+    print(data)
     if selectedSheet == 'Linear Regression':
-        forecast_val, dt = LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
+        forecast_val, dt, metrics = LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
     elif selectedSheet == 'Log Linear Regression':
-        forecast_val, dt = LogLinear(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)   
+        forecast_val, dt, metrics = LogLinear(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)   
     elif selectedSheet == 'Average':
-        forecast_val, dt = Average(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
+        forecast_val, dt, metrics = Average(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
     elif selectedSheet == 'Holt':
-        forecast_val, dt = Holt(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
-    return {"forecast": forecast_val, "dt": dt,"filename": file.filename, "historyFromDate" : historyFromDate,"historyToDate" : historyToDate,"selectedFromDate" : selectedFromDate,"selectedToDate" : selectedToDate}
+        forecast_val, dt, metrics = Holt(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
+    return {"forecast": forecast_val, "dt": dt, "metrices": metrics, "filename": file.filename, "historyFromDate" : historyFromDate,"historyToDate" : historyToDate,"selectedFromDate" : selectedFromDate,"selectedToDate" : selectedToDate}
 
 

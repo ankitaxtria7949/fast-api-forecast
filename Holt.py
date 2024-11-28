@@ -38,6 +38,7 @@ def Holt(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
     forecast_res["months"] = col_months
     selected_data["months"] = get_months_between_dates(parsed_dates[0], parsed_dates[1])
     forecast = []
+    metrics = {}
     for index, row in data.iterrows():
         y = row.values.astype(float)  # Convert 'y' values to float
         selected_data[index] = list(map(float, y))
@@ -52,7 +53,7 @@ def Holt(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
         forecast = forecast[to_remove:]
         forecast_res[index] = list(forecast)
         
-    return forecast_res, selected_data
+    return forecast_res, selected_data, metrics
 
 
 

@@ -2,9 +2,9 @@ def LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, sel
     import numpy as np
     import pandas as pd
     from datetime import datetime
-    print(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
     # Initialize the Linear Regression model
     forecast_res = {}
+    forecast_for_given_res = {}
     selected_data = {}
     dates = [historyFromDate, historyToDate, selectedFromDate, selectedToDate]
     parsed_dates = []
@@ -37,19 +37,65 @@ def LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, sel
     col_months = date_range.strftime('%b-%y').tolist()
     forecast_res["months"] = col_months
     selected_data["months"] = get_months_between_dates(parsed_dates[0], parsed_dates[1])
-    forecast = []
     for index, row in data.iterrows():
+        forecast = []
+        forecast_for_given = []
         y = row.values.astype(float)  # Convert 'y' values to float
         X = np.hstack((np.ones((months.shape[0], 1)), months))
         coefficients = np.linalg.inv(X.T @ X) @ X.T @ y
+        temp_X = np.array(range(1, len(X) + 1))
+        for i in temp_X:
+            forecast_for_given.append(coefficients[0] + coefficients[1] * i)
         for i in future_months:
             forecast.append(coefficients[0] + coefficients[1] * i[0])
         forecast_res[index] = list(forecast)
+        forecast_for_given_res[index] = list(forecast_for_given)
         selected_data[index] = list(map(float, y))
+    metrics = calculate_metrics(selected_data[0], forecast_for_given_res[0])
+    return forecast_res, selected_data, metrics
 
-    return forecast_res, selected_data
 
+def calculate_metrics(actual_values, predicted_values):
+    import numpy as np
+    metrics = {}
+    # R-Squared (R²)
+    actual_mean = np.mean(actual_values)
+    ss_total = np.sum((np.array(actual_values) - actual_mean) ** 2)
+    ss_residual = np.sum((np.array(actual_values) - np.array(predicted_values)) ** 2)
+    r_squared = 1 - (ss_residual / ss_total)
+    
+    # Mean Absolute Error (MAE)
+    mae = np.mean(np.abs(np.array(actual_values) - np.array(predicted_values)))
 
+    # Mean Absolute Percentage Error (MAPE)
+    mape = np.mean(np.abs((np.array(actual_values) - np.array(predicted_values)) / np.array(actual_values))) * 100
+
+    # Mean Squared Error (MSE)
+    mse = np.mean((np.array(actual_values) - np.array(predicted_values)) ** 2)
+
+    # Root Mean Squared Error (RMSE)
+    rmse = np.sqrt(mse)
+
+    # Normalized Root Mean Squared Error (NRMSE)
+    nrmse = rmse / (max(actual_values) - min(actual_values))
+
+    # Weighted Absolute Percentage Error (WAPE)
+    wape = np.sum(np.abs(np.array(actual_values) - np.array(predicted_values))) / np.sum(np.abs(actual_values))
+
+    # Weighted Mean Absolute Percentage Error (WMAPE)
+    wmape = np.sum(np.abs((np.array(actual_values) - np.array(predicted_values)) / np.array(actual_values)) * np.array(actual_values)) / np.sum(np.abs(actual_values))
+
+    # Store metrics
+    metrics["R-Squared"] = r_squared
+    metrics["MAE"] = mae
+    metrics["MAPE"] = mape
+    metrics["MSE"] = mse
+    metrics["RMSE"] = rmse
+    metrics["NRMSE"] = nrmse
+    metrics["WAPE"] = wape
+    metrics["WMAPE"] = wmape
+
+    return metrics
 
 
 def standardize_date(date_string):

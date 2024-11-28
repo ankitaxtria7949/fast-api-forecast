@@ -44,10 +44,51 @@ def Average(data, historyFromDate, historyToDate, selectedFromDate, selectedToDa
             forecast.append(np.mean(y))
         forecast_res[index] = list(forecast)
         selected_data[index] = list(map(float, y))
+    fore = [forecast_res[0][0] for _ in selected_data[0]] 
+    metrics = calculate_metrics(selected_data[0], fore)
+    return forecast_res, selected_data, metrics
 
-    return forecast_res, selected_data
+def calculate_metrics(actual_values, predicted_values):
+    import numpy as np
+    metrics = {}
+    # R-Squared (R²)
+    actual_mean = np.mean(actual_values)
+    ss_total = np.sum((np.array(actual_values) - actual_mean) ** 2)
+    ss_residual = np.sum((np.array(actual_values) - np.array(predicted_values)) ** 2)
+    r_squared = 1 - (ss_residual / ss_total)
+    
+    # Mean Absolute Error (MAE)
+    mae = np.mean(np.abs(np.array(actual_values) - np.array(predicted_values)))
 
+    # Mean Absolute Percentage Error (MAPE)
+    mape = np.mean(np.abs((np.array(actual_values) - np.array(predicted_values)) / np.array(actual_values))) * 100
 
+    # Mean Squared Error (MSE)
+    mse = np.mean((np.array(actual_values) - np.array(predicted_values)) ** 2)
+
+    # Root Mean Squared Error (RMSE)
+    rmse = np.sqrt(mse)
+
+    # Normalized Root Mean Squared Error (NRMSE)
+    nrmse = rmse / (max(actual_values) - min(actual_values))
+
+    # Weighted Absolute Percentage Error (WAPE)
+    wape = np.sum(np.abs(np.array(actual_values) - np.array(predicted_values))) / np.sum(np.abs(actual_values))
+
+    # Weighted Mean Absolute Percentage Error (WMAPE)
+    wmape = np.sum(np.abs((np.array(actual_values) - np.array(predicted_values)) / np.array(actual_values)) * np.array(actual_values)) / np.sum(np.abs(actual_values))
+
+    # Store metrics
+    metrics["R-Squared"] = r_squared
+    metrics["MAE"] = mae
+    metrics["MAPE"] = mape
+    metrics["MSE"] = mse
+    metrics["RMSE"] = rmse
+    metrics["NRMSE"] = nrmse
+    metrics["WAPE"] = wape
+    metrics["WMAPE"] = wmape
+
+    return metrics
 
 
 def standardize_date(date_string):
