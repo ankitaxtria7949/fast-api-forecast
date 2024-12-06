@@ -28,7 +28,7 @@ def read_root():
 
 
 @app.post("/upload")
-async def forecast_sales(file:UploadFile=File(...), selectedSheet: Optional[str] = Form(None), historyFromDate: Optional[str] = Form(None), historyToDate: Optional[str] = Form(None), selectedFromDate: Optional[str] = Form(None), selectedToDate: Optional[str] = Form(None)): 
+async def forecast_sales(file:UploadFile=File(...), modelType: Optional[str] = Form(None), lassoAlpha: Optional[str] = Form(None), ridgeAlpha: Optional[str] = Form(None), maxiter: Optional[str] = Form(None), selectedSheet: Optional[str] = Form(None), historyFromDate: Optional[str] = Form(None), historyToDate: Optional[str] = Form(None), selectedFromDate: Optional[str] = Form(None), selectedToDate: Optional[str] = Form(None)): 
     contents = await file.read()
     decoded = contents.decode('utf-8')
     csv_reader = csv.reader(StringIO(decoded), delimiter=',')
@@ -37,9 +37,8 @@ async def forecast_sales(file:UploadFile=File(...), selectedSheet: Optional[str]
         dates = [entry[0] for entry in data]
         values = [entry[1] for entry in data]
         data = [dates, values]
-    print(data)
     if selectedSheet == 'Linear Regression':
-        forecast_val, dt, metrics = LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
+        forecast_val, dt, metrics = LinearRegression(lassoAlpha, ridgeAlpha, maxiter, modelType, data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
     elif selectedSheet == 'Log Linear Regression':
         forecast_val, dt, metrics = LogLinear(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)   
     elif selectedSheet == 'Average':

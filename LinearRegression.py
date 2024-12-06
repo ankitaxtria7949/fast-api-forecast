@@ -1,7 +1,9 @@
-def LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate):
+def LinearRegression(lassoAlpha, ridgeAlpha, maxiter, modelType, data, historyFromDate, historyToDate, selectedFromDate, selectedToDate):
     import numpy as np
     import pandas as pd
     from datetime import datetime
+    from sklearn.linear_model import Ridge
+    from sklearn.linear_model import Lasso
     # Initialize the Linear Regression model
     forecast_res = {}
     forecast_for_given_res = {}
@@ -42,7 +44,16 @@ def LinearRegression(data, historyFromDate, historyToDate, selectedFromDate, sel
         forecast_for_given = []
         y = row.values.astype(float)  # Convert 'y' values to float
         X = np.hstack((np.ones((months.shape[0], 1)), months))
-        coefficients = np.linalg.inv(X.T @ X) @ X.T @ y
+        if modelType == "Ridge":
+            ridge_model = Ridge(alpha=float(ridgeAlpha), fit_intercept=False, max_iter=int(maxiter))
+            ridge_model.fit(X, y)
+            coefficients = ridge_model.coef_
+        elif modelType == "Lasso":
+            lasso_model = Lasso(alpha=float(lassoAlpha), fit_intercept=False, max_iter=int(maxiter))
+            lasso_model.fit(X, y)
+            coefficients = lasso_model.coef_  
+        else :
+            coefficients = np.linalg.inv(X.T @ X) @ X.T @ y
         temp_X = np.array(range(1, len(X) + 1))
         for i in temp_X:
             forecast_for_given.append(coefficients[0] + coefficients[1] * i)
