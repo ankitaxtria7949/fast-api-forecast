@@ -8,6 +8,9 @@ from LinearRegression import LinearRegression
 from LogLinear import LogLinear
 from Average import Average
 from Holt import Holt
+from io import BytesIO
+import pandas as pd
+from outlier import detect_outliers_by_month
 
 app=FastAPI()
 # Allow React app on localhost:3000 to communicate with the FastAPI backend
@@ -47,4 +50,33 @@ async def forecast_sales(file:UploadFile=File(...), modelType: Optional[str] = F
         forecast_val, dt, metrics = Holt(data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
     return {"forecast": forecast_val, "dt": dt, "metrices": metrics, "filename": file.filename, "historyFromDate" : historyFromDate,"historyToDate" : historyToDate,"selectedFromDate" : selectedFromDate,"selectedToDate" : selectedToDate}
 
+
+
+
+@app.post("/upload2")
+async def files(file: UploadFile = File(...)):
+    try:
+        # Read the file contents
+        contents = await file.read()
+        excel_data = pd.read_excel(BytesIO(contents))
+        df = pd.DataFrame(excel_data)
+        print("working")
+        
+        # Detect outliers
+        outliers, summary = detect_outliers_by_month(df)
+        outliers.fillna(-1, inplace=True)
+        summary.fillna(-1, inplace=True)
+        print(outliers)
+        print(summary["6-Months Rolling Avg"])
+        # Convert the DataFrame to a JSON-serializable format
+        outliers_json = outliers.to_dict(orient="records")
+        summary_json = summary.to_dict(orient="records")
+
+        return {"outliers": outliers_json, "summary": summary_json}
+
+    except Exception as e:
+        return {"error": str(e)}
+
+
+    
 
