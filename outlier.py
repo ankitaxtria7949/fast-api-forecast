@@ -20,10 +20,11 @@ def detect_outliers_by_month(df):
  
         # Extract the Month-Year from the 'Date' column
         df_melted['Months'] = df_melted['Date'].dt.strftime('%b-%y')
- 
+        months = df_melted["Months"][:4]
+
         # Drop rows where 'Market Volume' is NaN
         df_melted = df_melted.dropna(subset=['Market Volume'])
- 
+
         # Append the melted DataFrame to the list
         melted_list.append(df_melted)
  
@@ -38,7 +39,10 @@ def detect_outliers_by_month(df):
  
     # Calculate the rolling average for the previous 6 months (excluding the current month)
     final_df['6-Months Rolling Avg'] = final_df.groupby('Primary key')['Previous Market Volume'].rolling(6, min_periods=1).mean().reset_index(level=0, drop=True)
- 
+    final_df['12-Months Rolling Avg'] = final_df.groupby('Primary key')['Market Volume'].rolling(12, min_periods=12).mean().reset_index(level=0, drop=True)
+    final_df['4-Months Rolling Avg'] = final_df.groupby('Primary key')['Market Volume'].rolling(4, min_periods=1).mean().reset_index(level=0, drop=True)
+
+
     # Calculate the rolling standard deviation for the previous 6 months (excluding the current month)
     final_df['6-Months Rolling Std'] = final_df.groupby('Primary key')['Previous Market Volume'].rolling(6, min_periods=1).std().reset_index(level=0, drop=True)
  
@@ -114,27 +118,77 @@ def detect_outliers_by_month(df):
  
     final_df['Hample Outlier Flag'] = final_df.apply(get_hample_outlier_flag, axis=1)
  
- 
+    
     # Drop the 'Previous Market Volume' column, as it's no longer needed
     final_df.drop(columns=['Previous Market Volume'], inplace=True)
- 
+
+    def detect_trend_flag(row):
+        if pd.isna(row['12-Months Rolling Avg']) or pd.isna(row['4-Months Rolling Avg']):
+            return 'Not Applied'
+        if row['12-Months Rolling Avg'] > row['4-Months Rolling Avg']:
+            return 'Yes'
+        return 'No'
+    
+    final_df['Trend Flag'] = final_df.apply(detect_trend_flag, axis=1)
+    final_df['Previous Trend Flag'] = final_df.groupby('Primary key')['Trend Flag'].shift(1)
+
+    def detect_trend_break(row):
+        if row['Trend Flag'] == 'Not Applied':
+            return 'No Break'
+        if row['Trend Flag'] != 'Not Applied' and row['Previous Trend Flag'] == 'Not Applied':
+            return 'No Break'
+        if row['Trend Flag'] != row['Previous Trend Flag']:
+            return 'Trend Break'
+        return 'No Break'
+
+    # Apply the function to create the 'Trend Break' column
+    final_df['Trend Break'] = final_df.apply(detect_trend_break, axis=1)
+
+    def detect_trend_break_val(row):
+        if row['Trend Break'] == 'Trend Break':
+            return row['Market Volume']
+        return None
+
+    # Apply the function to create the 'Trend Break' column
+    final_df['Trend Break Value'] = final_df.apply(detect_trend_break_val, axis=1)
+
+
+    # Drop the 'Previous Trend Flag' column as it's no longer needed
+    final_df.drop(columns=['Previous Trend Flag'], inplace=True)
+    
     # Separate Outliers for IQR and Z-Score
     iqr_outliers = final_df[final_df['IQR Outlier Flag'] == 'Outlier']
     zscore_outliers = final_df[final_df['Z-Score Outlier Flag'] == 'Outlier']
     hample_outliers = final_df[final_df['Hample Outlier Flag'] == 'Outlier']
-
-    # Filter out rows where Market Volume is within ±5% of LCL and UCL
-    iqr_outliers = iqr_outliers[~((iqr_outliers['Market Volume'] >= 0.95 * iqr_outliers['IQRLCL']) & (iqr_outliers['Market Volume'] <= 1.05 * iqr_outliers['IQRUCL']))]
-    zscore_outliers = zscore_outliers[~((zscore_outliers['Market Volume'] >= 0.95 * zscore_outliers['ZLCL']) & (zscore_outliers['Market Volume'] <= 1.05 * zscore_outliers['ZUCL']))]
-    hample_outliers = hample_outliers[~((hample_outliers['Market Volume'] >= 0.95 * hample_outliers['HLCL']) & (hample_outliers['Market Volume'] <= 1.05 * hample_outliers['HUCL']))]
-
     common_outliers = pd.merge(iqr_outliers, zscore_outliers, how='inner')
     common_outliers = pd.merge(common_outliers, hample_outliers, how='inner')
+    common_outliers.drop(columns=['ZLCL', 'ZUCL', 'HLCL', 'HUCL'], inplace=True)
+    common_outliers.rename(columns={'IQRLCL': 'LCL'}, inplace=True)
+    common_outliers.rename(columns={'IQRUCL': 'UCL'}, inplace=True)
+
+    # Filter out rows where Market Volume is within ±5% of LCL and UCL
+    iqr_outliers = iqr_outliers[~((iqr_outliers['Market Volume'] >= 0.90 * iqr_outliers['IQRLCL']) & (iqr_outliers['Market Volume'] <= 1.1 * iqr_outliers['IQRUCL']))]
+    iqr_outliers.drop(columns=['ZLCL', 'ZUCL', 'HLCL', 'HUCL'], inplace=True)
+    iqr_outliers.rename(columns={'IQRLCL': 'LCL'}, inplace=True)
+    iqr_outliers.rename(columns={'IQRUCL': 'UCL'}, inplace=True)
+    zscore_outliers = zscore_outliers[~((zscore_outliers['Market Volume'] >= 0.90 * zscore_outliers['ZLCL']) & (zscore_outliers['Market Volume'] <= 1.1 * zscore_outliers['ZUCL']))]
+    zscore_outliers.drop(columns=['IQRLCL', 'IQRUCL', 'HLCL', 'HUCL'], inplace=True)
+    zscore_outliers.rename(columns={'ZLCL': 'LCL'}, inplace=True)
+    zscore_outliers.rename(columns={'ZUCL': 'UCL'}, inplace=True)
+    hample_outliers = hample_outliers[~((hample_outliers['Market Volume'] >= 0.90 * hample_outliers['HLCL']) & (hample_outliers['Market Volume'] <= 1.1 * hample_outliers['HUCL']))]
+    hample_outliers.drop(columns=['IQRLCL', 'IQRUCL', 'ZLCL', 'ZUCL'], inplace=True)
+    hample_outliers.rename(columns={'HLCL': 'LCL'}, inplace=True)
+    hample_outliers.rename(columns={'HUCL': 'UCL'}, inplace=True)
+    
 
     # Combine all unique outliers
-    union_outliers = pd.concat([iqr_outliers, zscore_outliers, hample_outliers, common_outliers]).drop_duplicates()
-    union_outliers = union_outliers[["Product", "Country", "Forecast Scenario", "Months", "Market Volume", "ZLCL", "ZUCL"]]
- 
+    union_outliers = pd.concat([iqr_outliers, zscore_outliers, hample_outliers, common_outliers]).drop_duplicates(subset=["Product", "Country", "Forecast Scenario", "Months", "Market Volume"])
+    
+
+    union_outliers = union_outliers[["Product", "Country", "Forecast Scenario", "Months", "Market Volume", "LCL", "UCL"]]
+
+    for i in range(len(months)):
+        union_outliers = union_outliers[~(union_outliers["Months"]==months[i])]
+
+
     return union_outliers, final_df
-
-
