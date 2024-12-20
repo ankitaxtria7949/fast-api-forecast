@@ -3,6 +3,13 @@ import pandas as pd
 def detect_outliers_by_month(df):
     # Initialize an empty list to collect the results
     melted_list = []
+    for col in df.columns:
+        if df[col].dtype == 'object':  # Check if the column is of object type
+            try:
+                # Remove commas and convert to float
+                df[col] = df[col].str.replace(',', '').astype(float)
+            except ValueError:
+                pass
  
     # Loop through each row of the DataFrame
     for i, row in df.iterrows():
@@ -15,8 +22,8 @@ def detect_outliers_by_month(df):
         # Create the 'Primary key' column by concatenating Product, Country, and Forecast Scenario
         df_melted['Primary key'] = df_melted['Product'] + df_melted['Country'] + df_melted['Forecast Scenario']
  
-        # Convert 'Date' to datetime
-        df_melted['Date'] = pd.to_datetime(df_melted['Date'], format='%Y-%m-%d %H:%M:%S')
+        df_melted['Date'] = df_melted['Date'].str.strip()
+        df_melted['Date'] = pd.to_datetime(df_melted['Date'], format='%b-%y', errors='coerce')
  
         # Extract the Month-Year from the 'Date' column
         df_melted['Months'] = df_melted['Date'].dt.strftime('%b-%y')

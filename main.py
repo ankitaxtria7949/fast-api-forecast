@@ -60,10 +60,9 @@ async def files(file: UploadFile = File(...), flag: Optional[str] = Form(None)):
         try:
             # Read the file contents
             contents = await file.read()
-            excel_data = pd.read_excel(BytesIO(contents))
+            excel_data = pd.read_csv(BytesIO(contents))
             df = pd.DataFrame(excel_data)
-            
-
+            print("1")
             # Detect outliers
             outliers, summary = detect_outliers_by_month(df)
             outliers.fillna(-1, inplace=True)
@@ -72,6 +71,7 @@ async def files(file: UploadFile = File(...), flag: Optional[str] = Form(None)):
             # Convert the DataFrame to a JSON-serializable format
             outliers_json = outliers.to_dict(orient="records")
             summary_json = summary.to_dict(orient="records")
+            print(outliers)
 
             return {"outliers": outliers_json, "summary": summary_json}
 
@@ -80,11 +80,10 @@ async def files(file: UploadFile = File(...), flag: Optional[str] = Form(None)):
     else:
         try:
             contents = await file.read()
-            excel_data = pd.read_excel(BytesIO(contents))
+            excel_data = pd.read_csv(BytesIO(contents))
             df = pd.DataFrame(excel_data)
             val_dt = validate_data(df)
             val_dt__json = val_dt.to_dict(orient="records")
-            print(val_dt__json)
             return {"val_dt": val_dt__json}
 
         except Exception as e:
