@@ -56,7 +56,7 @@ async def forecast_sales(file:UploadFile=File(...), modelType: Optional[str] = F
 
 @app.post("/upload2")
 async def files(file: UploadFile = File(...), flag: Optional[str] = Form(None)):
-    if flag == 'false':
+    if flag != 'validation':
         try:
             # Read the file contents
             contents = await file.read()
@@ -84,6 +84,7 @@ async def files(file: UploadFile = File(...), flag: Optional[str] = Form(None)):
             df = pd.DataFrame(excel_data)
             val_dt = validate_data(df)
             val_dt__json = val_dt.to_dict(orient="records")
+            print(val_dt__json)
             return {"val_dt": val_dt__json}
 
         except Exception as e:

@@ -1,6 +1,13 @@
 import pandas as pd
 def validate_data(df):
     error_list = []
+    for col in df.columns:
+        if df[col].dtype == 'object':  # Check if the column is of object type
+            try:
+                # Remove commas and convert to float
+                df[col] = df[col].str.replace(',', '').astype(float)
+            except ValueError:
+                pass
 
     # Iterate over the months and validate
     months = df.columns[3:]  # Months start from the 4th column onwards
