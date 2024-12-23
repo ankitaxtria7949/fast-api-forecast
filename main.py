@@ -84,7 +84,6 @@ async def files(file: UploadFile = File(...), flag: Optional[str] = Form(None)):
             df = pd.DataFrame(excel_data)
             val_dt = validate_data(df)
             val_dt__json = val_dt.to_dict(orient="records")
-            print(val_dt__json)
             return {"val_dt": val_dt__json}
 
         except Exception as e:
