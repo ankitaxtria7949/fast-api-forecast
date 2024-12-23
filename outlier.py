@@ -187,15 +187,21 @@ def detect_outliers_by_month(df):
     hample_outliers.rename(columns={'HLCL': 'LCL'}, inplace=True)
     hample_outliers.rename(columns={'HUCL': 'UCL'}, inplace=True)
     
-
     # Combine all unique outliers
     union_outliers = pd.concat([iqr_outliers, zscore_outliers, hample_outliers, common_outliers]).drop_duplicates(subset=["Product", "Country", "Forecast Scenario", "Months", "Market Volume"])
     
 
-    union_outliers = union_outliers[["Product", "Country", "Forecast Scenario", "Months", "Market Volume", "LCL", "UCL"]]
+    union_outliers = union_outliers[["Product", "Country", "Forecast Scenario", "Months", "Market Volume", "LCL", "UCL", 'Trend Break Value']]
 
     for i in range(len(months)):
         union_outliers = union_outliers[~(union_outliers["Months"]==months[i])]
 
+    final_df = final_df[["Product", "Country", "Forecast Scenario", "Months", "Market Volume", "IQRLCL", "IQRUCL", 'Trend Break Value']]
+    final_df.rename(columns={'IQRLCL': 'LCL'}, inplace=True)
+    final_df.rename(columns={'IQRUCL': 'UCL'}, inplace=True)
+
+    merged = pd.merge(final_df, union_outliers, on=['Country', 'Product', 'Forecast Scenario', 'Months', 'Market Volume'], suffixes=('', '_df1'), how='left')
+    final_df['LCL'] = merged['LCL_df1'].combine_first(final_df['LCL'])
+    final_df['UCL'] = merged['UCL_df1'].combine_first(final_df['UCL'])
 
     return union_outliers, final_df
