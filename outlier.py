@@ -1,4 +1,5 @@
 import pandas as pd
+from dateutil import parser
  
 def detect_outliers_by_month(df):
     # Initialize an empty list to collect the results
@@ -10,7 +11,17 @@ def detect_outliers_by_month(df):
                 df[col] = df[col].str.replace(',', '').astype(float)
             except ValueError:
                 pass
- 
+    # remove columns that are not dates
+    def is_date_column(col):
+        try:       
+            parser.parse(col)
+            return True
+        except ValueError:
+            return False
+    # Filter columns that are valid dates
+    date_columns = [col for col in df.columns if is_date_column(col)]
+    final_columns = ['Product', 'Country', 'Forecast Scenario', 'Product life cycle stage'] + date_columns
+    df = df[final_columns]
     # Loop through each row of the DataFrame
     for i, row in df.iterrows():
         # Melt the row (convert from wide to long format)
@@ -18,7 +29,6 @@ def detect_outliers_by_month(df):
                             id_vars=['Product', 'Country', 'Forecast Scenario', 'Product life cycle stage'],
                             var_name='Date',
                             value_name='Market Volume')
- 
         # Create the 'Primary key' column by concatenating Product, Country, and Forecast Scenario
         df_melted['Primary key'] = df_melted['Product'] + df_melted['Country'] + df_melted['Forecast Scenario']
  
