@@ -41,6 +41,7 @@ async def forecast_sales(file:UploadFile=File(...), modelType: Optional[str] = F
         dates = [entry[0] for entry in data]
         values = [entry[1] for entry in data]
         data = [dates, values]
+
     if selectedSheet == 'Linear Regression':
         forecast_val, dt, metrics = LinearRegression(lassoAlpha, ridgeAlpha, maxiter, modelType, data, historyFromDate, historyToDate, selectedFromDate, selectedToDate)
     elif selectedSheet == 'Log Linear Regression':
@@ -56,13 +57,14 @@ async def forecast_sales(file:UploadFile=File(...), modelType: Optional[str] = F
 
 @app.post("/upload2")
 async def files(file: UploadFile = File(...), flag: Optional[str] = Form(None)):
+    print(file)
     if flag != 'validation':
         try:
             # Read the file contents
             contents = await file.read()
             excel_data = pd.read_csv(BytesIO(contents))
             df = pd.DataFrame(excel_data)
-            print("1")
+            
             # Detect outliers
             outliers, summary = detect_outliers_by_month(df)
             outliers.fillna(-1, inplace=True)
