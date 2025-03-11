@@ -57,6 +57,7 @@ async def forecast_sales(file:UploadFile=File(...), modelType: Optional[str] = F
 
 @app.post("/upload2")
 async def files(file: UploadFile = File(...), flag: Optional[str] = Form(None)):
+    print("This is the data")
     print(file)
     if flag != 'validation':
         try:
